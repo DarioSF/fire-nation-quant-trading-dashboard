@@ -55,13 +55,23 @@
             height: 400px;
         }
 
-        /* Tabla de Operaciones */
+        /* Tablas */
+        .table-section-title {
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 10px;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
             background-color: var(--card-bg);
             border-radius: 12px;
             overflow: hidden;
+            margin-bottom: 40px;
         }
         th, td { padding: 15px; text-align: left; border-bottom: 1px solid #334155; }
         th { background-color: #0f172a; color: var(--text-muted); font-weight: 600; }
@@ -69,6 +79,9 @@
         .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
         .badge-long { background-color: rgba(59, 130, 246, 0.2); color: var(--accent); }
         .badge-short { background-color: rgba(168, 85, 247, 0.2); color: #a855f7; }
+        
+        .long-text { color: var(--accent); font-weight: bold;}
+        .short-text { color: #a855f7; font-weight: bold;}
     </style>
 </head>
 <body>
@@ -103,6 +116,25 @@
     </div>
 
     <div style="overflow-x: auto;">
+        <h2 class="table-section-title">Rendimiento por Escuadrón</h2>
+        <table id="botSummaryTable">
+            <thead>
+                <tr>
+                    <th>Bot</th>
+                    <th>Activo</th>
+                    <th>Operaciones (L / S)</th>
+                    <th>Win Rate</th>
+                    <th>Comisiones</th>
+                    <th>PnL Neto</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+        </table>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <h2 class="table-section-title">Registro Histórico</h2>
         <table id="ledgerTable">
             <thead>
                 <tr>
@@ -125,7 +157,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getFirestore, collection, getDocs, orderBy, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    // Tu configuración inyectada
     const firebaseConfig = {
         apiKey: "AIzaSyBrveWMvyuzQRZakH4WghdZ-6iZ_WqIkx8",
         authDomain: "fire-nation-vault.firebaseapp.com",
@@ -151,10 +182,12 @@
             let chartLabels = ['Inicio'];
             let chartData = [0];
             
-            const tbody = document.querySelector('#ledgerTable tbody');
-            tbody.innerHTML = ''; // Limpiar cargando...
+            // Diccionario para almacenar las métricas individuales de cada bot
+            const statsPorBot = {};
+            
+            const tbodyLedger = document.querySelector('#ledgerTable tbody');
+            tbodyLedger.innerHTML = '';
 
-            // Invertimos para la tabla (los más nuevos arriba) pero leemos en orden para el gráfico
             const operaciones = [];
             querySnapshot.forEach((doc) => {
                 operaciones.push(doc.data());
@@ -166,15 +199,37 @@
                 totalFees += data.comisiones || 0;
                 if (data.resultado === 'WIN') wins++;
 
+                // Agrupar datos para la nueva tabla de Escuadrón
+                let nombreBot = data.bot || 'Desconocido';
+                if (!statsPorBot[nombreBot]) {
+                    statsPorBot[nombreBot] = {
+                        asset: data.asset || 'N/A',
+                        longs: 0,
+                        shorts: 0,
+                        wins: 0,
+                        totalOps: 0,
+                        comisiones: 0,
+                        pnlNeto: 0
+                    };
+                }
+                
+                statsPorBot[nombreBot].totalOps++;
+                statsPorBot[nombreBot].pnlNeto += (data.pnl_neto || 0);
+                statsPorBot[nombreBot].comisiones += (data.comisiones || 0);
+                
+                if (data.tipo === 'LONG') statsPorBot[nombreBot].longs++;
+                if (data.tipo === 'SHORT') statsPorBot[nombreBot].shorts++;
+                if (data.resultado === 'WIN') statsPorBot[nombreBot].wins++;
+
                 // Datos para el Gráfico
                 let fecha = data.timestamp ? data.timestamp.toDate() : new Date();
                 chartLabels.push(fecha.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}));
                 chartData.push(totalPnl);
 
-                // Crear Fila para la tabla
-                let fila = `<tr>
+                // Crear Fila para el Registro Histórico
+                let filaLedger = `<tr>
                     <td style="color: #94a3b8;">${fecha.toLocaleString()}</td>
-                    <td style="font-weight: bold;">${data.bot || 'Desconocido'}</td>
+                    <td style="font-weight: bold;">${nombreBot}</td>
                     <td>${data.asset || 'N/A'}</td>
                     <td><span class="badge ${data.tipo === 'LONG' ? 'badge-long' : 'badge-short'}">${data.tipo}</span></td>
                     <td class="${data.resultado === 'WIN' ? 'val-win' : 'val-loss'} font-bold">${data.resultado}</td>
@@ -183,15 +238,36 @@
                         ${(data.pnl_neto || 0) >= 0 ? '+' : ''}$${(data.pnl_neto || 0).toFixed(4)}
                     </td>
                 </tr>`;
-                tbody.insertAdjacentHTML('afterbegin', fila); // Insertar al principio para ver los últimos primero
+                tbodyLedger.insertAdjacentHTML('afterbegin', filaLedger);
             });
 
-            // Actualizar Tarjetas
+            // Inyectar datos en la Nueva Tabla de Escuadrón
+            const tbodyBot = document.querySelector('#botSummaryTable tbody');
+            tbodyBot.innerHTML = '';
+            
+            Object.keys(statsPorBot).forEach(bot => {
+                let stats = statsPorBot[bot];
+                let winRate = stats.totalOps > 0 ? ((stats.wins / stats.totalOps) * 100).toFixed(1) : 0;
+                let clasePnl = stats.pnlNeto >= 0 ? 'val-win' : 'val-loss';
+                let signoPnl = stats.pnlNeto >= 0 ? '+' : '';
+
+                let filaBot = `<tr>
+                    <td style="font-weight: bold; font-size: 1.1rem; color: var(--text-main);">${bot}</td>
+                    <td>${stats.asset}</td>
+                    <td><span class="long-text">${stats.longs} L</span> <span style="color: #475569;">|</span> <span class="short-text">${stats.shorts} S</span></td>
+                    <td style="font-weight: bold;">${winRate}%</td>
+                    <td style="color: #fbbf24;">$${stats.comisiones.toFixed(4)}</td>
+                    <td class="${clasePnl}" style="font-weight: bold;">${signoPnl}$${stats.pnlNeto.toFixed(4)}</td>
+                </tr>`;
+                tbodyBot.insertAdjacentHTML('beforeend', filaBot);
+            });
+
+            // Actualizar Tarjetas Generales
             document.getElementById('val-pnl').innerText = `${totalPnl >= 0 ? '+' : ''}$${totalPnl.toFixed(4)}`;
             document.getElementById('val-pnl').className = `metric-value ${totalPnl >= 0 ? 'val-win' : 'val-loss'}`;
             
-            let winrate = totalTrades > 0 ? ((wins / totalTrades) * 100).toFixed(1) : 0;
-            document.getElementById('val-winrate').innerText = `${winrate}%`;
+            let winrateGlobal = totalTrades > 0 ? ((wins / totalTrades) * 100).toFixed(1) : 0;
+            document.getElementById('val-winrate').innerText = `${winrateGlobal}%`;
             document.getElementById('val-fees').innerText = `$${totalFees.toFixed(4)}`;
             document.getElementById('val-trades').innerText = totalTrades;
 

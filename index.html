@@ -105,24 +105,6 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.5);
         }
 
-        /* Animación de Parpadeo Neón Sutil (Flicker) */
-        @keyframes neon-flicker {
-            0%, 18%, 22%, 25%, 53%, 57%, 100% {
-                opacity: 1;
-            }
-            20%, 24%, 55% {
-                opacity: 0.6;
-            }
-            21%, 54% {
-                opacity: 0.9;
-            }
-        }
-
-        #equityChart {
-            /* Duración de 8s para que no sea excesivo, repetición infinita */
-            animation: neon-flicker 8s infinite alternate;
-        }
-
         /* Tablas */
         .table-section-title {
             font-family: 'Orbitron', sans-serif;
@@ -358,14 +340,14 @@
         Chart.defaults.color = '#64748b';
         Chart.defaults.font.family = "'Share Tech Mono', monospace";
 
-        // Plugin para añadir resplandor (Glow) exclusivamente a la línea
+        // Plugin exclusivo para añadir el resplandor estático (Glow) a la línea de equidad
         const neonGlowPlugin = {
             id: 'neonGlow',
             beforeDatasetsDraw: (chart) => {
                 const ctx = chart.ctx;
                 ctx.save();
-                ctx.shadowColor = '#05ffa1'; // Color Verde Neón
-                ctx.shadowBlur = 12; // Intensidad del brillo
+                ctx.shadowColor = '#05ffa1'; // Verde Neón
+                ctx.shadowBlur = 12;          // Difusión del brillo
                 ctx.shadowOffsetX = 0;
                 ctx.shadowOffsetY = 0;
             },
@@ -384,17 +366,17 @@
                     data: data,
                     borderColor: '#05ffa1',
                     backgroundColor: 'transparent',
-                    borderWidth: 3, // Línea ligeramente más gruesa
-                    pointRadius: 0, // Sin puntos para que parezca un tubo de neón continuo
+                    borderWidth: 3, 
+                    pointRadius: 0, // Se ocultan los puntos para emular un cable/tubo limpio
                     pointHoverRadius: 6,
                     pointBackgroundColor: '#fff',
                     pointBorderColor: '#05ffa1',
                     pointBorderWidth: 2,
-                    fill: false, // ¡Relleno desactivado!
+                    fill: false, // Relleno desactivado por completo
                     tension: 0.3
                 }]
             },
-            plugins: [neonGlowPlugin], // Inyectamos el plugin de brillo
+            plugins: [neonGlowPlugin],
             options: {
                 responsive: true,
                 maintainAspectRatio: false,

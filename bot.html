@@ -55,7 +55,7 @@
             <div class="metric-value" id="bot-pnl">...</div>
         </div>
         <div class="cyber-card">
-            <h4>WIN RATE</h4>
+            <h4>WIN RATE GLOBAL</h4>
             <div class="metric-value" id="bot-winrate">...</div>
         </div>
         <div class="cyber-card">
@@ -65,6 +65,14 @@
         <div class="cyber-card">
             <h4>COMISIONES</h4>
             <div class="metric-value" id="bot-fees" style="color: #fbbf24;">...</div>
+        </div>
+        <div class="cyber-card" style="border-color: #05ffa1; background-color: rgba(5, 255, 161, 0.05);">
+            <h4 style="color: #05ffa1; text-shadow: none;">WIN RATE (LONG)</h4>
+            <div class="metric-value" id="bot-winrate-long" style="color: #05ffa1;">...</div>
+        </div>
+        <div class="cyber-card" style="border-color: #ff2a6d; background-color: rgba(255, 42, 109, 0.05);">
+            <h4 style="color: #ff2a6d; text-shadow: none;">WIN RATE (SHORT)</h4>
+            <div class="metric-value" id="bot-winrate-short" style="color: #ff2a6d;">...</div>
         </div>
     </div>
 
@@ -133,7 +141,9 @@
             const q = query(collection(db, "operaciones"), where("bot", "==", botName), orderBy("timestamp", "asc"));
             const snapshot = await getDocs(q);
 
-            let pnlTotal = 0, aciertos = 0, longs = 0, shorts = 0, totalFees = 0;
+            let pnlTotal = 0, aciertos = 0, totalFees = 0;
+            let longs = 0, shorts = 0;
+            let longsWon = 0, shortsWon = 0; // Nuevos contadores
             let equityData = [0], labels = ["Inicio"];
 
             snapshot.forEach(doc => {
@@ -146,25 +156,41 @@
                 labels.push(dateStr);
 
                 if(data.resultado === "WIN") aciertos++;
-                if(data.tipo === "LONG") longs++;
-                if(data.tipo === "SHORT") shorts++;
+                
+                // Clasificación Direccional
+                if(data.tipo === "LONG") {
+                    longs++;
+                    if(data.resultado === "WIN") longsWon++;
+                }
+                if(data.tipo === "SHORT") {
+                    shorts++;
+                    if(data.resultado === "WIN") shortsWon++;
+                }
             });
 
             const totalTrades = snapshot.size;
+            
+            // Cálculos de Win Rate (protegidos contra división por cero)
             const winRate = totalTrades > 0 ? ((aciertos / totalTrades) * 100).toFixed(1) : 0;
+            const winRateLong = longs > 0 ? ((longsWon / longs) * 100).toFixed(1) : 0;
+            const winRateShort = shorts > 0 ? ((shortsWon / shorts) * 100).toFixed(1) : 0;
 
+            // Inyectar en el HTML
             document.getElementById('bot-pnl').innerText = pnlTotal >= 0 ? `+$${pnlTotal.toFixed(4)}` : `-$${Math.abs(pnlTotal).toFixed(4)}`;
             document.getElementById('bot-pnl').className = `metric-value ${pnlTotal >= 0 ? 'val-win' : 'val-loss'}`;
             document.getElementById('bot-winrate').innerText = `${winRate}%`;
             document.getElementById('bot-trades').innerText = totalTrades;
             document.getElementById('bot-fees').innerText = `$${totalFees.toFixed(4)}`;
+            
+            // Inyectar Direccionales (Si no hay operaciones, muestra N/A)
+            document.getElementById('bot-winrate-long').innerText = longs > 0 ? `${winRateLong}%` : 'N/A';
+            document.getElementById('bot-winrate-short').innerText = shorts > 0 ? `${winRateShort}%` : 'N/A';
 
             dibujarGraficos(labels, equityData, longs, shorts);
 
         } catch (error) {
             console.error(error);
-            // ALERTA DE ÍNDICE
-            document.getElementById('bot-identity').innerHTML = `<div style="color:var(--loss); width:100%;"><b>⚠️ SE REQUIERE ÍNDICE FIRESTORE</b><br>Para poder filtrar por Bot, Firebase requiere un índice. Abre la consola de tu navegador (F12 o Inspeccionar), busca el error rojo de Firebase, y haz clic en el enlace que te dan para que Google lo cree automáticamente. Tardará 2 minutos en funcionar.</div>`;
+            document.getElementById('bot-identity').innerHTML = `<div style="color:var(--loss); width:100%;"><b>⚠️ SE REQUIERE ÍNDICE FIRESTORE</b><br>Haz clic en el enlace rojo de la consola para crearlo.</div>`;
         }
     }
 

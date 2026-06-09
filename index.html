@@ -307,7 +307,6 @@
                 let clasePnl = stats.pnlNeto >= 0 ? 'val-win' : 'val-loss';
                 let signoPnl = stats.pnlNeto >= 0 ? '+' : '';
 
-                // FILA MODIFICADA CON BADGES NEÓN
                 let filaBot = `<tr>
                     <td style="font-size: 1.2rem;"><a href="bot.html?nombre=${bot}" class="bot-link">${bot}</a></td>
                     <td style="font-weight:bold; letter-spacing: 1px;">${stats.asset}</td>
@@ -338,24 +337,40 @@
     }
 
     function renderizarGrafico(labels, data) {
-        // Estilo Neon para Chart.js
         Chart.defaults.color = '#64748b';
         Chart.defaults.font.family = "'Share Tech Mono', monospace";
 
+        // Plugin custom para dibujar la sombra (Glow real en el Canvas)
+        const neonGlowPlugin = {
+            id: 'neonGlow',
+            beforeDatasetDraw: (chart, args) => {
+                const ctx = chart.ctx;
+                ctx.save();
+                ctx.shadowColor = chart.data.datasets[args.index].glowColor || chart.data.datasets[args.index].borderColor;
+                ctx.shadowBlur = chart.data.datasets[args.index].glowBlur !== undefined ? chart.data.datasets[args.index].glowBlur : 20;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+            },
+            afterDatasetDraw: (chart) => {
+                chart.ctx.restore();
+            }
+        };
+
         const ctx = document.getElementById('equityChart').getContext('2d');
-        new Chart(ctx, {
+        const myChart = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: labels,
                 datasets: [{
                     label: 'Curva de Equidad Global ($)',
                     data: data,
-                    borderColor: '#05ffa1', /* Ahora la principal es Verde Neón */
-                    backgroundColor: 'rgba(5, 255, 161, 0.1)',
-                    borderWidth: 2,
-                    pointRadius: 2,
-                    pointBackgroundColor: '#fff',
-                    fill: true,
+                    borderColor: 'rgba(5, 255, 161, 1)',
+                    glowColor: '#05ffa1', // Usado por nuestro plugin
+                    glowBlur: 15,         // Intensidad del resplandor
+                    borderWidth: 3,
+                    pointRadius: 0,       // Quitar puntos para que parezca un tubo de neón continuo
+                    pointHoverRadius: 6,
+                    fill: false,          // Quitamos el fill interior
                     tension: 0.3
                 }]
             },
@@ -366,9 +381,33 @@
                 scales: {
                     y: { grid: { color: 'rgba(255, 255, 255, 0.05)' } },
                     x: { grid: { display: false } }
+                },
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
                 }
-            }
+            },
+            plugins: [neonGlowPlugin]
         });
+
+        // Loop para el efecto Parpadeo / Flicker aleatorio
+        setInterval(() => {
+            const dataset = myChart.data.datasets[0];
+            
+            // 12% de probabilidad de que el neón "falle" (parpadeo)
+            if (Math.random() > 0.88) {
+                dataset.borderColor = 'rgba(5, 255, 161, 0.2)'; // Tubo casi apagado
+                dataset.glowBlur = 2; // Sin apenas resplandor
+            } else {
+                // Estado encendido normal (con leves variaciones orgánicas)
+                const alpha = 0.8 + Math.random() * 0.2; // Opacidad entre 0.8 y 1
+                dataset.borderColor = `rgba(5, 255, 161, ${alpha})`;
+                dataset.glowBlur = 10 + Math.random() * 10; // Resplandor fluctuando entre 10 y 20
+            }
+            
+            // Actualizamos la gráfica sin animaciones para que el parpadeo sea eléctrico y brusco
+            myChart.update('none'); 
+        }, 60); // Se evalúa cada 60ms
     }
 
     cargarDatos();

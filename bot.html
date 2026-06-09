@@ -256,27 +256,87 @@
     }
 
     function dibujarGraficos(labels, equityData, longs, shorts) {
-        // Estilo Neon para Chart.js
+        // Estilo Global
         Chart.defaults.color = '#8892b0';
         Chart.defaults.font.family = "'Share Tech Mono', monospace";
 
+        // 1. PLUGIN: Resplandor para el Gráfico de Línea
+        const neonLineGlowPlugin = {
+            id: 'neonLineGlow',
+            beforeDatasetsDraw: (chart) => {
+                const ctx = chart.ctx;
+                ctx.save();
+                ctx.shadowColor = '#05ffa1'; // Verde Neón
+                ctx.shadowBlur = 12;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+            },
+            afterDatasetsDraw: (chart) => {
+                chart.ctx.restore();
+            }
+        };
+
+        // 2. PLUGIN: Resplandor Dinámico para el Gráfico Donut
+        const neonDonutGlowPlugin = {
+            id: 'neonDonutGlow',
+            beforeDatasetsDraw: (chart) => {
+                const ctx = chart.ctx;
+                chart.data.datasets.forEach((dataset, datasetIndex) => {
+                    const meta = chart.getDatasetMeta(datasetIndex);
+                    meta.data.forEach((arc, index) => {
+                        // Evita errores durante la inicialización de la gráfica
+                        if (!arc.x || !arc.y || arc.outerRadius === undefined) return;
+                        
+                        ctx.save();
+                        // Dibuja el trazado geométrico del arco
+                        ctx.beginPath();
+                        ctx.arc(arc.x, arc.y, arc.outerRadius, arc.startAngle, arc.endAngle);
+                        ctx.arc(arc.x, arc.y, arc.innerRadius, arc.endAngle, arc.startAngle, true);
+                        ctx.closePath();
+                        
+                        // Extrae el color de la porción y lo aplica como resplandor
+                        const color = dataset.backgroundColor[index];
+                        ctx.fillStyle = color;
+                        ctx.shadowColor = color;
+                        ctx.shadowBlur = 15; // Intensidad del brillo del donut
+                        ctx.shadowOffsetX = 0;
+                        ctx.shadowOffsetY = 0;
+                        
+                        // Dibuja la sombra antes de que Chart.js pinte la porción real encima
+                        ctx.fill(); 
+                        ctx.restore();
+                    });
+                });
+            }
+        };
+
+        // Render Gráfico de Línea (Equidad)
         new Chart(document.getElementById('equityChart').getContext('2d'), {
             type: 'line',
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'PnL Acumulado ($)', data: equityData,
+                    label: 'PnL Acumulado ($)', 
+                    data: equityData,
                     borderColor: '#05ffa1', 
-                    backgroundColor: 'rgba(5, 255, 161, 0.1)',
-                    borderWidth: 2, 
-                    pointRadius: 2, 
-                    pointBackgroundColor: '#fff', 
-                    fill: true, 
+                    backgroundColor: 'transparent',
+                    borderWidth: 3, 
+                    pointRadius: 0, // Puntos ocultos = tubo continuo
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#05ffa1',
+                    pointBorderWidth: 2,
+                    fill: false, // Sin relleno de fondo
                     tension: 0.3
                 }]
             },
+            plugins: [neonLineGlowPlugin], // Aplicamos el plugin de línea
             options: { 
-                responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+                responsive: true, 
+                maintainAspectRatio: false, 
+                plugins: { legend: { display: false } },
+                layout: { padding: { top: 15, bottom: 15 } }, // Espacio para no cortar el brillo
+                interaction: { mode: 'index', intersect: false },
                 scales: { 
                     x: { grid: { display: false } }, 
                     y: { grid: { color: 'rgba(255, 255, 255, 0.05)' } } 
@@ -284,6 +344,7 @@
             }
         });
 
+        // Render Gráfico Donut (Direccionalidad)
         new Chart(document.getElementById('donutChart').getContext('2d'), {
             type: 'doughnut',
             data: {
@@ -291,14 +352,23 @@
                 datasets: [{
                     data: [longs, shorts],
                     backgroundColor: ['#05ffa1', '#ff2a6d'],
-                    borderColor: '#03060a', 
+                    borderColor: '#03060a', // Mismo color del fondo para separar tajadas
                     borderWidth: 3,
                     hoverOffset: 4
                 }]
             },
+            plugins: [neonDonutGlowPlugin], // Aplicamos el plugin del Donut
             options: { 
-                responsive: true, maintainAspectRatio: false, 
-                plugins: { legend: { position: 'bottom', labels: { color: '#e0e6ed', font: {family: "'Orbitron', sans-serif"} } } } 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                cutout: '75%', // Lo hacemos más delgado para que parezca un anillo de neón
+                layout: { padding: 20 }, // Margen para que el brillo externo no se corte
+                plugins: { 
+                    legend: { 
+                        position: 'bottom', 
+                        labels: { color: '#e0e6ed', font: {family: "'Orbitron', sans-serif"} } 
+                    } 
+                } 
             }
         });
     }

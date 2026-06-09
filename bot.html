@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal Quant - Agente</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* ESTÉTICA CYBERPUNK (Igual que index) */
+        :root {
+            --bg-color: #050b14; --card-bg: #0d1522; --text-main: #e0e6ed; --text-muted: #8892b0;
+            --accent: #ff2a6d; --accent-glow: rgba(255, 42, 109, 0.3); --win: #05ffa1; --loss: #ff2a2a;
+        }
+        body { font-family: 'Courier New', Courier, monospace; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        .cyber-card { background-color: var(--card-bg); border: 1px solid #1a2639; border-radius: 8px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.5); transition: all 0.3s ease; }
+        .cyber-card:hover { border-color: var(--accent); box-shadow: 0 0 15px var(--accent-glow); }
+        
+        h1, h2, h3, h4 { color: var(--accent); text-shadow: 0 0 10px var(--accent-glow); text-transform: uppercase; letter-spacing: 2px; margin-top: 0;}
+        
+        .btn-back { display: inline-block; color: var(--text-main); text-decoration: none; border: 1px solid var(--accent); padding: 5px 15px; border-radius: 4px; margin-bottom: 20px; transition: 0.2s;}
+        .btn-back:hover { background-color: rgba(255,42,109,0.2); text-shadow: 0 0 5px var(--accent); }
+
+        .id-grid { display: flex; justify-content: space-around; flex-wrap: wrap; text-align: center; gap: 10px;}
+        .id-item span { color: var(--accent); font-size: 0.8em; font-weight: bold; }
+        .id-item b { display: block; font-size: 1.2em; margin-top: 5px; color: #fff; }
+
+        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; text-align: center;}
+        .metric-value { font-size: 2rem; font-weight: bold; margin-top: 10px; color: #fff;}
+        .val-win { color: var(--win); text-shadow: 0 0 5px rgba(5, 255, 161, 0.3); }
+        .val-loss { color: var(--loss); text-shadow: 0 0 5px rgba(255, 42, 42, 0.3); }
+
+        .charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        @media(max-width: 768px) { .charts-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="index.html" class="btn-back">&lt; VOLVER AL VAULT</a>
+    <header style="text-align: center; margin-bottom: 30px;">
+        <h1 id="bot-title">CARGANDO AGENTE...</h1>
+    </header>
+
+    <div class="cyber-card" style="margin-bottom: 30px;">
+        <h3 style="text-align: center; border-bottom: 1px dashed var(--accent); padding-bottom: 10px;">TARJETA DE IDENTIDAD TÁCTICA</h3>
+        <div class="id-grid" id="bot-identity">
+            </div>
+    </div>
+
+    <div class="metrics-grid">
+        <div class="cyber-card">
+            <h4>PNL NETO</h4>
+            <div class="metric-value" id="bot-pnl">...</div>
+        </div>
+        <div class="cyber-card">
+            <h4>WIN RATE</h4>
+            <div class="metric-value" id="bot-winrate">...</div>
+        </div>
+        <div class="cyber-card">
+            <h4>OPERACIONES</h4>
+            <div class="metric-value" id="bot-trades">...</div>
+        </div>
+        <div class="cyber-card">
+            <h4>COMISIONES</h4>
+            <div class="metric-value" id="bot-fees" style="color: #fbbf24;">...</div>
+        </div>
+    </div>
+
+    <div class="charts-grid">
+        <div class="cyber-card">
+            <h4 style="text-align: center;">CURVA DE EQUIDAD AISLADA</h4>
+            <div style="height: 300px;"><canvas id="equityChart"></canvas></div>
+        </div>
+        <div class="cyber-card">
+            <h4 style="text-align: center;">TENDENCIA DIRECCIONAL</h4>
+            <div style="height: 300px; display: flex; justify-content: center;"><canvas id="donutChart"></canvas></div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, getDocs, orderBy, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    // 1. CONFIGURACIÓN FIREBASE (Exactamente la tuya)
+    const firebaseConfig = {
+        apiKey: "AIzaSyBrveWMvyuzQRZakH4WghdZ-6iZ_WqIkx8",
+        authDomain: "fire-nation-vault.firebaseapp.com",
+        projectId: "fire-nation-vault",
+        storageBucket: "fire-nation-vault.firebasestorage.app",
+        messagingSenderId: "453368759095",
+        appId: "1:453368759095:web:8a33648ab6d90d8f9d50b2"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // 2. BASE DE DATOS DE IDENTIDADES
+    // Puedes editar esto tú mismo según vayas haciendo cambios en el servidor
+    const identidades = {
+        "Azula": { activo: "BTC/USD", temporalidad: "15m", tp: "1.3x ATR", sl: "1.3x ATR", modo: "Escala Reducida" },
+        "Jinora": { activo: "LINK/USD", temporalidad: "15m", tp: "1.3x ATR", sl: "1.3x ATR", modo: "Escala Reducida" },
+        "Suki": { activo: "XRP/USD", temporalidad: "15m", tp: "1.5x ATR", sl: "1.5x ATR", modo: "Estándar Institucional" },
+        "Kyoshi": { activo: "ADA/USD", temporalidad: "15m", tp: "1.5x ATR", sl: "1.5x ATR", modo: "Estándar Institucional" },
+        "Korra": { activo: "AVAX/USD", temporalidad: "15m", tp: "1.5x ATR", sl: "1.5x ATR", modo: "Estándar Institucional" },
+        "Ty Lee": { activo: "SOL/USD", temporalidad: "15m", tp: "1.5x ATR", sl: "1.5x ATR", modo: "Estándar Institucional" },
+        "Katara": { activo: "ETH/USD", temporalidad: "15m", tp: "1.5x ATR", sl: "1.5x ATR", modo: "Estándar Institucional" },
+        "Lin": { activo: "DOT/USD", temporalidad: "15m", tp: "1.5x ATR", sl: "1.5x ATR", modo: "Estándar Institucional" },
+        "Zhuli": { activo: "DOGE/USD", temporalidad: "5m", tp: "0.40%", sl: "1.5x ATR", modo: "Spot Sniper (Solo Long)" },
+        "Mai": { activo: "PEPE/USD", temporalidad: "15m", tp: "?", sl: "?", modo: "En cuarentena de datos" }
+    };
+
+    // 3. LEER LA URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const botName = urlParams.get('nombre') || 'Desconocido';
+
+    document.getElementById('bot-title').innerText = `TERMINAL AGENTE: ${botName}`;
+
+    const idData = identidades[botName] || { activo: "Auto-detectado", temporalidad: "-", tp: "-", sl: "-", modo: "-" };
+    document.getElementById('bot-identity').innerHTML = `
+        <div class="id-item"><span>ACTIVO</span><b>${idData.activo}</b></div>
+        <div class="id-item"><span>VELAS</span><b>${idData.temporalidad}</b></div>
+        <div class="id-item"><span>TAKE PROFIT</span><b>${idData.tp}</b></div>
+        <div class="id-item"><span>STOP LOSS</span><b>${idData.sl}</b></div>
+        <div class="id-item"><span>ESTRATEGIA</span><b>${idData.modo}</b></div>
+    `;
+
+    // 4. CONSULTAR FIREBASE (SOLO LAS DE ESTE BOT)
+    async function cargarDatosDelBot() {
+        try {
+            const q = query(collection(db, "operaciones"), where("bot", "==", botName), orderBy("timestamp", "asc"));
+            const snapshot = await getDocs(q);
+
+            let pnlTotal = 0, aciertos = 0, longs = 0, shorts = 0, totalFees = 0;
+            let equityData = [0], labels = ["Inicio"];
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                pnlTotal += data.pnl_neto || 0;
+                totalFees += data.comisiones || 0;
+                equityData.push(pnlTotal);
+                
+                let dateStr = data.timestamp ? data.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "N/A";
+                labels.push(dateStr);
+
+                if(data.resultado === "WIN") aciertos++;
+                if(data.tipo === "LONG") longs++;
+                if(data.tipo === "SHORT") shorts++;
+            });
+
+            const totalTrades = snapshot.size;
+            const winRate = totalTrades > 0 ? ((aciertos / totalTrades) * 100).toFixed(1) : 0;
+
+            document.getElementById('bot-pnl').innerText = pnlTotal >= 0 ? `+$${pnlTotal.toFixed(4)}` : `-$${Math.abs(pnlTotal).toFixed(4)}`;
+            document.getElementById('bot-pnl').className = `metric-value ${pnlTotal >= 0 ? 'val-win' : 'val-loss'}`;
+            document.getElementById('bot-winrate').innerText = `${winRate}%`;
+            document.getElementById('bot-trades').innerText = totalTrades;
+            document.getElementById('bot-fees').innerText = `$${totalFees.toFixed(4)}`;
+
+            dibujarGraficos(labels, equityData, longs, shorts);
+
+        } catch (error) {
+            console.error(error);
+            // ALERTA DE ÍNDICE
+            document.getElementById('bot-identity').innerHTML = `<div style="color:var(--loss); width:100%;"><b>⚠️ SE REQUIERE ÍNDICE FIRESTORE</b><br>Para poder filtrar por Bot, Firebase requiere un índice. Abre la consola de tu navegador (F12 o Inspeccionar), busca el error rojo de Firebase, y haz clic en el enlace que te dan para que Google lo cree automáticamente. Tardará 2 minutos en funcionar.</div>`;
+        }
+    }
+
+    // 5. RENDERIZAR GRÁFICOS
+    function dibujarGraficos(labels, equityData, longs, shorts) {
+        new Chart(document.getElementById('equityChart').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'PnL Acumulado ($)', data: equityData,
+                    borderColor: '#05ffa1', backgroundColor: 'rgba(5, 255, 161, 0.1)',
+                    borderWidth: 2, pointRadius: 2, pointBackgroundColor: '#fff', fill: true, tension: 0.3
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+                scales: { x: { grid: { display: false }, ticks:{ color:'#8892b0' } }, y: { grid: { color: '#1a2639' }, ticks:{ color:'#8892b0' } } }
+            }
+        });
+
+        new Chart(document.getElementById('donutChart').getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: ['LONG (Compras)', 'SHORT (Ventas)'],
+                datasets: [{
+                    data: [longs, shorts],
+                    backgroundColor: ['#05ffa1', '#ff2a6d'],
+                    borderColor: '#050b14', borderWidth: 2
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#e0e6ed' } } } }
+        });
+    }
+
+    cargarDatosDelBot();
+</script>
+</body>
+</html>

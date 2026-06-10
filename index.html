@@ -19,8 +19,8 @@
             --text-muted: #64748b;
             
             /* Colores Base */
-            --accent: #ff2a6d; 
-            --win: #05ffa1; 
+            --accent: #ff2a6d; /* Rosa Neón */
+            --win: #05ffa1;    /* Verde Neón */
             --loss: #ff2a2a;
             --warn: #fbbf24;
 
@@ -53,7 +53,7 @@
         }
         header p { color: var(--text-muted); margin-top: 5px; font-size: 1.1rem; letter-spacing: 1px;}
         
-        /* Grid de Métricas (4 Columnas) */
+        /* Grid de Métricas Principales */
         .metrics-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -94,7 +94,82 @@
         .val-win { color: var(--win); text-shadow: var(--neon-green); }
         .val-loss { color: var(--loss); text-shadow: var(--neon-red); }
 
-        /* Gráfico */
+        /* ========================================= */
+        /* NUEVO: PANEL DE MANDO (TARJETAS DE FLOTA) */
+        /* ========================================= */
+        .fleet-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 50px;
+        }
+        .bot-card {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 4px;
+            border: 2px solid;
+            text-align: left;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+        }
+        
+        /* ESTADOS NEÓN (ACTIVO/INACTIVO) */
+        .bot-card.active {
+            border-color: var(--win);
+            box-shadow: 0 0 10px rgba(5, 255, 161, 0.2), inset 0 0 10px rgba(5, 255, 161, 0.05);
+        }
+        .bot-card.active:hover {
+            box-shadow: var(--neon-green), inset 0 0 15px rgba(5, 255, 161, 0.2);
+            transform: translateY(-3px);
+        }
+        .bot-card.inactive {
+            border-color: var(--accent);
+            box-shadow: 0 0 10px rgba(255, 42, 109, 0.2), inset 0 0 10px rgba(255, 42, 109, 0.05);
+        }
+        .bot-card.inactive:hover {
+            box-shadow: var(--neon-pink), inset 0 0 15px rgba(255, 42, 109, 0.2);
+            transform: translateY(-3px);
+        }
+
+        .bot-card-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            color: #fff;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .bot-card.active .bot-card-title { text-shadow: var(--neon-green); color: var(--win); }
+        .bot-card.inactive .bot-card-title { text-shadow: var(--neon-pink); color: var(--accent); }
+
+        .bot-card-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 1.05rem;
+        }
+        .bot-card-label { color: var(--text-muted); }
+        .bot-card-value { color: #fff; font-weight: bold; }
+        
+        .status-indicator {
+            margin-top: 10px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            text-align: right;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        .bot-card.active .status-indicator { color: var(--win); text-shadow: var(--neon-green); }
+        .bot-card.inactive .status-indicator { color: var(--accent); text-shadow: var(--neon-pink); }
+
+
+        /* Gráfico y Tablas (Conservado) */
         .chart-container {
             background-color: var(--card-bg);
             padding: 20px;
@@ -105,7 +180,6 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.5);
         }
 
-        /* Tablas */
         .table-section-title {
             font-family: 'Orbitron', sans-serif;
             color: var(--accent);
@@ -142,11 +216,8 @@
         .badge { padding: 4px 10px; border-radius: 2px; font-size: 0.85rem; font-weight: bold; letter-spacing: 1px;}
         .badge-long { background-color: rgba(5, 255, 161, 0.1); color: var(--win); border: 1px solid var(--win); box-shadow: 0 0 5px rgba(5, 255, 161, 0.2);}
         .badge-short { background-color: rgba(255, 42, 109, 0.1); color: var(--accent); border: 1px solid var(--accent); box-shadow: 0 0 5px rgba(255, 42, 109, 0.2);}
-        
-        .long-text { color: var(--win); font-weight: bold;}
-        .short-text { color: var(--accent); font-weight: bold;}
+        .badge-wait { background-color: rgba(251, 191, 36, 0.1); color: var(--warn); border: 1px solid var(--warn); box-shadow: 0 0 5px rgba(251, 191, 36, 0.2);}
 
-        /* ENLACES A BOTS */
         .bot-link {
             font-family: 'Orbitron', sans-serif;
             color: #fff;
@@ -188,6 +259,10 @@
             <div class="metric-value" id="val-trades" style="text-shadow: 0 0 10px rgba(255,255,255,0.4);">0</div>
         </div>
     </div>
+
+    <h2 class="table-section-title">ESTADO DE LA FLOTA EN VIVO</h2>
+    <div id="fleet-container" class="fleet-grid">
+        </div>
 
     <div class="chart-container">
         <canvas id="equityChart"></canvas>
@@ -231,7 +306,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, getDocs, orderBy, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, orderBy, query, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyBrveWMvyuzQRZakH4WghdZ-6iZ_WqIkx8",
@@ -245,6 +320,87 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    // ==========================================
+    // SISTEMA DE LATIDO Y TELEMETRÍA EN VIVO
+    // ==========================================
+    let estadoFlotaData = {};
+
+    function iniciarTelemetria() {
+        const q = query(collection(db, "estado_flota"));
+        // onSnapshot lee la base de datos en vivo sin recargar la página
+        onSnapshot(q, (snapshot) => {
+            snapshot.forEach((doc) => {
+                estadoFlotaData[doc.id] = doc.data();
+            });
+            renderizarTarjetasFlota();
+        });
+
+        // Este intervalo comprueba cada 5s si algún bot ha dejado de mandar el latido
+        setInterval(renderizarTarjetasFlota, 5000);
+    }
+
+    function renderizarTarjetasFlota() {
+        const container = document.getElementById('fleet-container');
+        container.innerHTML = '';
+        const now = new Date();
+
+        Object.values(estadoFlotaData).forEach(data => {
+            const botName = data.bot_name || 'Desconocido';
+            const asset = data.asset || 'N/A';
+            const trend = data.tendencia || 'N/A';
+            const position = data.posicion || 'ESPERANDO';
+            const orderSize = data.order_size || 0;
+            
+            // Comprobación de Bioseguridad: ¿Lleva más de 30 segundos sin latir?
+            let ultimaAct = data.ultima_actualizacion ? data.ultima_actualizacion.toDate() : new Date(0);
+            const diffSeconds = (now - ultimaAct) / 1000;
+            const isActive = diffSeconds < 30; 
+
+            const cardClass = isActive ? 'active' : 'inactive';
+            const statusText = isActive ? '🟢 ONLINE' : '🔴 OFFLINE';
+
+            // Colores para la posición
+            let posBadge = '';
+            if (position === 'LONG') posBadge = '<span class="badge badge-long">LONG</span>';
+            else if (position === 'SHORT') posBadge = '<span class="badge badge-short">SHORT</span>';
+            else posBadge = '<span class="badge badge-wait">ESPERANDO</span>';
+
+            const cardHTML = `
+                <a href="bot.html?nombre=${botName}" class="bot-card ${cardClass}">
+                    <div class="bot-card-title">${botName}</div>
+                    
+                    <div class="bot-card-row">
+                        <span class="bot-card-label">Activo:</span>
+                        <span class="bot-card-value">${asset}</span>
+                    </div>
+                    
+                    <div class="bot-card-row">
+                        <span class="bot-card-label">Tendencia 4H:</span>
+                        <span class="bot-card-value" style="color: ${trend === 'ALCISTA' ? 'var(--win)' : (trend === 'BAJISTA' ? 'var(--accent)' : 'white')}">${trend}</span>
+                    </div>
+                    
+                    <div class="bot-card-row" style="margin-top: 5px;">
+                        <span class="bot-card-label">Posición:</span>
+                        <span class="bot-card-value">${posBadge}</span>
+                    </div>
+                    
+                    <div class="bot-card-row" style="margin-top: 5px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+                        <span class="bot-card-label">Order Size:</span>
+                        <span class="bot-card-value">${orderSize}</span>
+                    </div>
+                    
+                    <div class="status-indicator">
+                        ${statusText}
+                    </div>
+                </a>
+            `;
+            container.insertAdjacentHTML('beforeend', cardHTML);
+        });
+    }
+
+    // ==========================================
+    // SISTEMA HISTÓRICO Y GRÁFICOS (MANTENIDO)
+    // ==========================================
     async function cargarDatos() {
         try {
             const q = query(collection(db, "operaciones"), orderBy("timestamp", "asc"));
@@ -282,7 +438,6 @@
                 chartLabels.push(fecha.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}));
                 chartData.push(totalPnl);
 
-                // LEDGER TABLE 
                 let filaLedger = `<tr>
                     <td style="color: #64748b;">${fecha.toLocaleString()}</td>
                     <td><a href="bot.html?nombre=${nombreBot}" class="bot-link">${nombreBot}</a></td>
@@ -297,7 +452,6 @@
                 tbodyLedger.insertAdjacentHTML('afterbegin', filaLedger);
             });
 
-            // BOT SUMMARY TABLE 
             const tbodyBot = document.querySelector('#botSummaryTable tbody');
             tbodyBot.innerHTML = '';
             
@@ -340,14 +494,13 @@
         Chart.defaults.color = '#64748b';
         Chart.defaults.font.family = "'Share Tech Mono', monospace";
 
-        // Plugin exclusivo para añadir el resplandor estático (Glow) a la línea de equidad
         const neonGlowPlugin = {
             id: 'neonGlow',
             beforeDatasetsDraw: (chart) => {
                 const ctx = chart.ctx;
                 ctx.save();
-                ctx.shadowColor = '#05ffa1'; // Verde Neón
-                ctx.shadowBlur = 12;          // Difusión del brillo
+                ctx.shadowColor = '#05ffa1';
+                ctx.shadowBlur = 12;          
                 ctx.shadowOffsetX = 0;
                 ctx.shadowOffsetY = 0;
             },
@@ -367,12 +520,12 @@
                     borderColor: '#05ffa1',
                     backgroundColor: 'transparent',
                     borderWidth: 3, 
-                    pointRadius: 0, // Se ocultan los puntos para emular un cable/tubo limpio
+                    pointRadius: 0, 
                     pointHoverRadius: 6,
                     pointBackgroundColor: '#fff',
                     pointBorderColor: '#05ffa1',
                     pointBorderWidth: 2,
-                    fill: false, // Relleno desactivado por completo
+                    fill: false, 
                     tension: 0.3
                 }]
             },
@@ -393,7 +546,9 @@
         });
     }
 
+    // ARRANQUE DEL SISTEMA
     cargarDatos();
+    iniciarTelemetria(); // <--- Activa el panel en vivo
 </script>
 </body>
 </html>

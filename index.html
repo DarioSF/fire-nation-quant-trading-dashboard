@@ -403,7 +403,7 @@
     // ==========================================
     async function cargarDatos() {
         try {
-            const q = query(collection(db, "operaciones"), orderBy("timestamp", "asc"));
+            const q = query(collection(db, "operaciones_v2"), orderBy("timestamp", "asc"));
             const querySnapshot = await getDocs(q);
             
             let totalPnl = 0, totalFees = 0, wins = 0, totalTrades = 0;

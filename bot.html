@@ -129,7 +129,7 @@
             <div class="metric-value" id="bot-winrate">...</div>
         </div>
         <div class="cyber-card">
-            <h4>OPERACIONES</h4>
+            <h4></h4>
             <div class="metric-value" id="bot-trades" style="text-shadow: 0 0 10px rgba(255,255,255,0.4);">...</div>
         </div>
         <div class="cyber-card">
@@ -203,7 +203,7 @@
 
     async function cargarDatosDelBot() {
         try {
-            const q = query(collection(db, "operaciones"), where("bot", "==", botName), orderBy("timestamp", "asc"));
+            const q = query(collection(db, "operaciones_v2"), where("bot", "==", botName), orderBy("timestamp", "asc"));
             const snapshot = await getDocs(q);
 
             let pnlTotal = 0, aciertos = 0, totalFees = 0;

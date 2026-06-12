@@ -87,7 +87,7 @@
         .metric-value { 
             font-family: 'Orbitron', sans-serif;
             font-size: 2.2rem; 
-            font-weight: 700; 
+            fontWeight: 700; 
             margin-top: 15px; 
             color: #fff;
         }
@@ -167,7 +167,6 @@
         }
         .bot-card.active .status-indicator { color: var(--win); text-shadow: var(--neon-green); }
         .bot-card.inactive .status-indicator { color: var(--accent); text-shadow: var(--neon-pink); }
-
 
         /* Gráfico y Tablas (Conservado) */
         .chart-container {
@@ -327,10 +326,10 @@
 
     function iniciarTelemetria() {
         const q = query(collection(db, "estado_flota"));
-        // onSnapshot lee la base de datos en vivo sin recargar la página
         onSnapshot(q, (snapshot) => {
             snapshot.forEach((doc) => {
-                estadoFlotaData[doc.id] = doc.data();
+                // CORRECCIÓN CRÍTICA: El ID del documento es el nombre del bot
+                estadoFlotaData[doc.id] = { bot_name: doc.id, ...doc.data() };
             });
             renderizarTarjetasFlota();
         });
@@ -548,7 +547,7 @@
 
     // ARRANQUE DEL SISTEMA
     cargarDatos();
-    iniciarTelemetria(); // <--- Activa el panel en vivo
+    iniciarTelemetria(); 
 </script>
 </body>
 </html>

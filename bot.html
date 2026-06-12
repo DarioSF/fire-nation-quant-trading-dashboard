@@ -94,7 +94,7 @@
         .metric-value { 
             font-family: 'Orbitron', sans-serif; /* Números más agresivos */
             font-size: 2.2rem; 
-            font-weight: 700; 
+            fontWeight: 700; 
             margin-top: 15px; 
             color: #fff;
         }
@@ -129,7 +129,7 @@
             <div class="metric-value" id="bot-winrate">...</div>
         </div>
         <div class="cyber-card">
-            <h4></h4>
+            <h4>OPERACIONES</h4>
             <div class="metric-value" id="bot-trades" style="text-shadow: 0 0 10px rgba(255,255,255,0.4);">...</div>
         </div>
         <div class="cyber-card">
@@ -174,17 +174,18 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    // CORRECCIÓN CRÍTICA: Alineado con la arquitectura 4H Momentum Breakout
     const identidades = {
-        "Azula": { activo: "BTC/USD", temporalidad: "15m", tp: "1.3x ATR", sl: "1.3x ATR", modo: "Escala Reducida" },
-        "Jinora": { activo: "LINK/USD", temporalidad: "15m", tp: "1.3x ATR", sl: "1.3x ATR", modo: "Escala Reducida" },
-        "Suki": { activo: "XRP/USD", temporalidad: "15m", tp: "1.5x ATR", sl: "1.5x ATR", modo: "Estándar Institucional" },
-        "Kyoshi": { activo: "ADA/USD", temporalidad: "15m", tp: "1.5x ATR", sl: "1.5x ATR", modo: "Estándar Institucional" },
-        "Korra": { activo: "AVAX/USD", temporalidad: "15m", tp: "1.5x ATR", sl: "1.5x ATR", modo: "Estándar Institucional" },
-        "Ty Lee": { activo: "SOL/USD", temporalidad: "15m", tp: "1.5x ATR", sl: "1.5x ATR", modo: "Estándar Institucional" },
-        "Katara": { activo: "ETH/USD", temporalidad: "15m", tp: "1.5x ATR", sl: "1.5x ATR", modo: "Estándar Institucional" },
-        "Lin": { activo: "DOT/USD", temporalidad: "15m", tp: "1.5x ATR", sl: "1.5x ATR", modo: "Estándar Institucional" },
-        "Zhuli": { activo: "DOGE/USD", temporalidad: "5m", tp: "0.40%", sl: "1.5x ATR", modo: "Spot Sniper (Solo Long)" },
-        "Mai": { activo: "NEAR/USD", temporalidad: "1m", tp: "BB (Media)", sl: "BB (Banda Inversa)", modo: "Sandbox HFT (Regreso Media)" }
+        "Azula":  { activo: "BTC/USD", temporalidad: "4H", tp: "Caza (Trailing)", sl: "Dinámico (2.0 - 3.0x)", modo: "Momentum Breakout" },
+        "Katara": { activo: "ETH/USD", temporalidad: "4H", tp: "Caza (Trailing)", sl: "Dinámico (2.0 - 3.0x)", modo: "Momentum Breakout" },
+        "Ty Lee": { activo: "SOL/USD", temporalidad: "4H", tp: "Caza (Trailing)", sl: "Dinámico (2.0 - 3.0x)", modo: "Momentum Breakout" },
+        "Suki":   { activo: "XRP/USD", temporalidad: "4H", tp: "Caza (Trailing)", sl: "Dinámico (2.0 - 3.0x)", modo: "Momentum Breakout" },
+        "Kyoshi": { activo: "ADA/USD", temporalidad: "4H", tp: "Caza (Trailing)", sl: "Dinámico (2.0 - 3.0x)", modo: "Momentum Breakout" },
+        "Korra":  { activo: "AVAX/USD", temporalidad: "4H", tp: "Caza (Trailing)", sl: "Dinámico (2.0 - 3.0x)", modo: "Momentum Breakout" },
+        "Lin":    { activo: "DOT/USD", temporalidad: "4H", tp: "Caza (Trailing)", sl: "Dinámico (2.0 - 3.0x)", modo: "Momentum Breakout" },
+        "Jinora": { activo: "LINK/USD", temporalidad: "4H", tp: "Caza (Trailing)", sl: "Dinámico (2.0 - 3.0x)", modo: "Momentum Breakout" },
+        "Mai":    { activo: "NEAR/USD", temporalidad: "4H", tp: "Caza (Trailing)", sl: "Dinámico (2.0 - 3.0x)", modo: "Momentum Breakout" },
+        "Zhuli":  { activo: "APT/USD", temporalidad: "4H", tp: "Caza (Trailing)", sl: "Dinámico (2.0 - 3.0x)", modo: "Momentum Breakout" }
     };
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -192,7 +193,7 @@
 
     document.getElementById('bot-title').innerText = `TERMINAL AGENTE: ${botName}`;
 
-    const idData = identidades[botName] || { activo: "Auto-detectado", temporalidad: "-", tp: "-", sl: "-", modo: "-" };
+    const idData = identidades[botName] || { activo: "Auto-detectado", temporalidad: "4H", tp: "Trailing", sl: "Dinámico", modo: "Momentum Breakout" };
     document.getElementById('bot-identity').innerHTML = `
         <div class="id-item"><span>ACTIVO</span><b>${idData.activo}</b></div>
         <div class="id-item"><span>VELAS</span><b>${idData.temporalidad}</b></div>
@@ -251,7 +252,7 @@
 
         } catch (error) {
             console.error(error);
-            document.getElementById('bot-identity').innerHTML = `<div style="color:var(--loss); width:100%;"><b>⚠️ SE REQUIERE ÍNDICE FIRESTORE</b><br>Abre la consola para crear el índice.</div>`;
+            document.getElementById('bot-identity').innerHTML = `<div style="color:var(--loss); width:100%;"><b>⚠️ SE REQUIERE ÍNDICE FIRESTORE</b><br>Abre la consola para crear el índice compuesto.</div>`;
         }
     }
 

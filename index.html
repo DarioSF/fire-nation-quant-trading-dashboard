@@ -95,7 +95,7 @@
         .val-loss { color: var(--loss); text-shadow: var(--neon-red); }
 
         /* ========================================= */
-        /* NUEVO: PANEL DE MANDO (TARJETAS DE FLOTA) */
+        /* PANEL DE MANDO (TARJETAS DE FLOTA) */
         /* ========================================= */
         .fleet-grid {
             display: grid;
@@ -328,7 +328,6 @@
         const q = query(collection(db, "estado_flota"));
         onSnapshot(q, (snapshot) => {
             snapshot.forEach((doc) => {
-                // CORRECCIÓN CRÍTICA: El ID del documento es el nombre del bot
                 estadoFlotaData[doc.id] = { bot_name: doc.id, ...doc.data() };
             });
             renderizarTarjetasFlota();
@@ -364,6 +363,36 @@
             else if (position === 'SHORT') posBadge = '<span class="badge badge-short">SHORT</span>';
             else posBadge = '<span class="badge badge-wait">ESPERANDO</span>';
 
+            // --- NUEVA LÓGICA: ALERTA DE GATILLO ARMADO ---
+            let alertaGatillo = '';
+            if (data.gatillo_long && position === 'ESPERANDO') {
+                alertaGatillo = `<div style="color: var(--win); text-shadow: var(--neon-green); font-weight:bold; font-size:0.85rem; margin-top:8px; text-align:center; border: 1px dashed var(--win); padding: 4px;">⚠️ GATILLO LONG ARMADO</div>`;
+            } else if (data.gatillo_short && position === 'ESPERANDO') {
+                alertaGatillo = `<div style="color: var(--accent); text-shadow: var(--neon-pink); font-weight:bold; font-size:0.85rem; margin-top:8px; text-align:center; border: 1px dashed var(--accent); padding: 4px;">⚠️ GATILLO SHORT ARMADO</div>`;
+            }
+
+            // --- NUEVA LÓGICA: DATOS EN VIVO SI HAY OPERACIÓN ---
+            let infoOperacion = '';
+            if (position !== 'ESPERANDO') {
+                let faseColor = data.fase_trailing > 0 ? 'var(--win)' : 'var(--warn)';
+                infoOperacion = `
+                    <div style="background-color: rgba(0,0,0,0.3); border-radius: 4px; padding: 8px; margin-top: 10px; border-left: 2px solid ${position === 'LONG' ? 'var(--win)' : 'var(--accent)'};">
+                        <div class="bot-card-row" style="margin-bottom: 4px; font-size: 0.9rem;">
+                            <span class="bot-card-label">Entrada:</span>
+                            <span class="bot-card-value">$${data.precio_entrada}</span>
+                        </div>
+                        <div class="bot-card-row" style="margin-bottom: 4px; font-size: 0.9rem;">
+                            <span class="bot-card-label">Stop Actual:</span>
+                            <span class="bot-card-value">$${data.stop_loss}</span>
+                        </div>
+                        <div class="bot-card-row" style="margin-bottom: 0px; font-size: 0.8rem;">
+                            <span class="bot-card-label">Fase Trailing:</span>
+                            <span class="bot-card-value" style="color: ${faseColor}; text-shadow: 0 0 5px ${faseColor};">Nivel ${data.fase_trailing}</span>
+                        </div>
+                    </div>
+                `;
+            }
+
             const cardHTML = `
                 <a href="bot.html?nombre=${botName}" class="bot-card ${cardClass}">
                     <div class="bot-card-title">${botName}</div>
@@ -379,17 +408,15 @@
                     </div>
                     
                     <div class="bot-card-row" style="margin-top: 5px;">
-                        <span class="bot-card-label">Posición:</span>
+                        <span class="bot-card-label">Estado:</span>
                         <span class="bot-card-value">${posBadge}</span>
                     </div>
                     
-                    <div class="bot-card-row" style="margin-top: 5px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
-                        <span class="bot-card-label">Order Size:</span>
-                        <span class="bot-card-value">${orderSize}</span>
-                    </div>
+                    ${alertaGatillo}
+                    ${infoOperacion}
                     
-                    <div class="status-indicator">
-                        ${statusText}
+                    <div style="flex-grow: 1;"></div> <div class="status-indicator" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+                        ${statusText} | <span style="color:#fff; font-size: 0.8rem;">$${data.precio_actual}</span>
                     </div>
                 </a>
             `;

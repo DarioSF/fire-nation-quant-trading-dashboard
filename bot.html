@@ -160,7 +160,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, getDocs, orderBy, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, orderBy, query, where, onSnapshot, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyBrveWMvyuzQRZakH4WghdZ-6iZ_WqIkx8",
@@ -201,6 +201,69 @@
         <div class="id-item"><span>STOP LOSS</span><b>${idData.sl}</b></div>
         <div class="id-item"><span>ESTRATEGIA</span><b>${idData.modo}</b></div>
     `;
+
+    function iniciarTelemetriaAgente() {
+        const docRef = doc(db, "estado_flota", botName);
+        onSnapshot(docRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                
+                // Si el contenedor de estado en vivo no existe, lo creamos
+                let livePanel = document.getElementById('live-status-panel');
+                if (!livePanel) {
+                    livePanel = document.createElement('div');
+                    livePanel.id = 'live-status-panel';
+                    livePanel.className = 'cyber-card';
+                    livePanel.style.marginBottom = '30px';
+                    // Lo insertamos justo después de la tarjeta de Identidad
+                    document.getElementById('bot-identity').parentElement.after(livePanel);
+                }
+
+                let contenidoHTML = `<h3 style="text-align: center; border-bottom: 1px dashed rgba(5,255,161,0.5); padding-bottom: 15px; margin-bottom: 20px; color: var(--win); text-shadow: var(--neon-green);">TELEMETRÍA EN VIVO</h3>`;
+
+                if (data.posicion === 'LONG' || data.posicion === 'SHORT') {
+                    let colorObj = data.posicion === 'LONG' ? 'var(--win)' : 'var(--accent)';
+                    let shadowObj = data.posicion === 'LONG' ? 'var(--neon-green)' : 'var(--neon-pink)';
+                    
+                    contenidoHTML += `
+                        <div class="metrics-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 0;">
+                            <div>
+                                <div style="color: var(--text-muted); font-size: 0.9rem;">PRECIO ACTUAL</div>
+                                <div style="color: #fff; font-size: 1.5rem; font-family: 'Orbitron', sans-serif;">$${data.precio_actual}</div>
+                            </div>
+                            <div>
+                                <div style="color: var(--text-muted); font-size: 0.9rem;">PRECIO ENTRADA</div>
+                                <div style="color: ${colorObj}; text-shadow: ${shadowObj}; font-size: 1.5rem; font-family: 'Orbitron', sans-serif;">$${data.precio_entrada}</div>
+                            </div>
+                            <div>
+                                <div style="color: var(--text-muted); font-size: 0.9rem;">STOP LOSS / TRAILING</div>
+                                <div style="color: var(--warn); font-size: 1.5rem; font-family: 'Orbitron', sans-serif;">$${data.stop_loss}</div>
+                            </div>
+                            <div>
+                                <div style="color: var(--text-muted); font-size: 0.9rem;">NIVEL DE PROTECCIÓN</div>
+                                <div style="color: #fff; font-size: 1.5rem; font-family: 'Orbitron', sans-serif;">Fase ${data.fase_trailing}</div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    let statusText = "ESPERANDO CONDICIONES ÓPTIMAS";
+                    let statusColor = "var(--text-muted)";
+                    
+                    if (data.gatillo_long) { statusText = "GATILLO LONG ARMADO - ESPERANDO RUPTURA"; statusColor = "var(--win)"; }
+                    if (data.gatillo_short) { statusText = "GATILLO SHORT ARMADO - ESPERANDO COLAPSO"; statusColor = "var(--accent)"; }
+                    
+                    contenidoHTML += `
+                        <div style="text-align: center; padding: 20px;">
+                            <div style="font-family: 'Orbitron', sans-serif; font-size: 1.2rem; color: ${statusColor};">${statusText}</div>
+                            <div style="color: #fff; font-size: 2rem; margin-top: 10px; font-family: 'Share Tech Mono', monospace;">Precio: $${data.precio_actual}</div>
+                        </div>
+                    `;
+                }
+                
+                livePanel.innerHTML = contenidoHTML;
+            }
+        });
+    }
 
     async function cargarDatosDelBot() {
         try {
@@ -374,7 +437,9 @@
         });
     }
 
+    // ARRANQUE DEL AGENTE
     cargarDatosDelBot();
+    iniciarTelemetriaAgente();
 </script>
 </body>
 </html>

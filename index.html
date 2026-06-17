@@ -349,6 +349,10 @@
             const position = data.posicion || 'ESPERANDO';
             const orderSize = data.order_size || 0;
             
+            // --- NUEVO: Control de decimales dinámico ---
+            const decimales = (asset.includes('BTC') || asset.includes('ETH')) ? 2 : 4;
+            const precioFormateado = parseFloat(data.precio_actual || 0).toFixed(decimales);
+            
             // Comprobación de Bioseguridad: ¿Lleva más de 30 segundos sin latir?
             let ultimaAct = data.ultima_actualizacion ? data.ultima_actualizacion.toDate() : new Date(0);
             const diffSeconds = (now - ultimaAct) / 1000;
@@ -363,7 +367,7 @@
             else if (position === 'SHORT') posBadge = '<span class="badge badge-short">SHORT</span>';
             else posBadge = '<span class="badge badge-wait">ESPERANDO</span>';
 
-            // --- NUEVA LÓGICA: ALERTA DE GATILLO ARMADO ---
+            // Alerta de Gatillo Armado
             let alertaGatillo = '';
             if (data.gatillo_long && position === 'ESPERANDO') {
                 alertaGatillo = `<div style="color: var(--win); text-shadow: var(--neon-green); font-weight:bold; font-size:0.85rem; margin-top:8px; text-align:center; border: 1px dashed var(--win); padding: 4px;">⚠️ GATILLO LONG ARMADO</div>`;
@@ -371,19 +375,22 @@
                 alertaGatillo = `<div style="color: var(--accent); text-shadow: var(--neon-pink); font-weight:bold; font-size:0.85rem; margin-top:8px; text-align:center; border: 1px dashed var(--accent); padding: 4px;">⚠️ GATILLO SHORT ARMADO</div>`;
             }
 
-            // --- NUEVA LÓGICA: DATOS EN VIVO SI HAY OPERACIÓN ---
+            // Datos en Vivo si hay Operación
             let infoOperacion = '';
             if (position !== 'ESPERANDO') {
                 let faseColor = data.fase_trailing > 0 ? 'var(--win)' : 'var(--warn)';
+                let pEntrada = parseFloat(data.precio_entrada || 0).toFixed(decimales);
+                let pStop = parseFloat(data.stop_loss || 0).toFixed(decimales);
+                
                 infoOperacion = `
                     <div style="background-color: rgba(0,0,0,0.3); border-radius: 4px; padding: 8px; margin-top: 10px; border-left: 2px solid ${position === 'LONG' ? 'var(--win)' : 'var(--accent)'};">
                         <div class="bot-card-row" style="margin-bottom: 4px; font-size: 0.9rem;">
                             <span class="bot-card-label">Entrada:</span>
-                            <span class="bot-card-value">$${data.precio_entrada}</span>
+                            <span class="bot-card-value">$${pEntrada}</span>
                         </div>
                         <div class="bot-card-row" style="margin-bottom: 4px; font-size: 0.9rem;">
                             <span class="bot-card-label">Stop Actual:</span>
-                            <span class="bot-card-value">$${data.stop_loss}</span>
+                            <span class="bot-card-value">$${pStop}</span>
                         </div>
                         <div class="bot-card-row" style="margin-bottom: 0px; font-size: 0.8rem;">
                             <span class="bot-card-label">Fase Trailing:</span>
@@ -415,8 +422,9 @@
                     ${alertaGatillo}
                     ${infoOperacion}
                     
-                    <div style="flex-grow: 1;"></div> <div class="status-indicator" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
-                        ${statusText} | <span style="color:#fff; font-size: 0.8rem;">$${data.precio_actual}</span>
+                    <div style="flex-grow: 1;"></div>
+                    <div class="status-indicator" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+                        ${statusText} <span style="color:#fff; font-size: 0.8rem;">$${precioFormateado}</span>
                     </div>
                 </a>
             `;

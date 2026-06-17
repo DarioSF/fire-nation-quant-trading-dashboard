@@ -208,6 +208,13 @@
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 
+                // --- NUEVO: Control de decimales dinámico basado en la identidad ---
+                const activoStr = idData.activo || "";
+                const decimales = (activoStr.includes('BTC') || activoStr.includes('ETH')) ? 2 : 4;
+                const pActual = parseFloat(data.precio_actual || 0).toFixed(decimales);
+                const pEntrada = parseFloat(data.precio_entrada || 0).toFixed(decimales);
+                const pStop = parseFloat(data.stop_loss || 0).toFixed(decimales);
+                
                 // Si el contenedor de estado en vivo no existe, lo creamos
                 let livePanel = document.getElementById('live-status-panel');
                 if (!livePanel) {
@@ -215,7 +222,6 @@
                     livePanel.id = 'live-status-panel';
                     livePanel.className = 'cyber-card';
                     livePanel.style.marginBottom = '30px';
-                    // Lo insertamos justo después de la tarjeta de Identidad
                     document.getElementById('bot-identity').parentElement.after(livePanel);
                 }
 
@@ -229,15 +235,15 @@
                         <div class="metrics-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 0;">
                             <div>
                                 <div style="color: var(--text-muted); font-size: 0.9rem;">PRECIO ACTUAL</div>
-                                <div style="color: #fff; font-size: 1.5rem; font-family: 'Orbitron', sans-serif;">$${data.precio_actual}</div>
+                                <div style="color: #fff; font-size: 1.5rem; font-family: 'Orbitron', sans-serif;">$${pActual}</div>
                             </div>
                             <div>
                                 <div style="color: var(--text-muted); font-size: 0.9rem;">PRECIO ENTRADA</div>
-                                <div style="color: ${colorObj}; text-shadow: ${shadowObj}; font-size: 1.5rem; font-family: 'Orbitron', sans-serif;">$${data.precio_entrada}</div>
+                                <div style="color: ${colorObj}; text-shadow: ${shadowObj}; font-size: 1.5rem; font-family: 'Orbitron', sans-serif;">$${pEntrada}</div>
                             </div>
                             <div>
                                 <div style="color: var(--text-muted); font-size: 0.9rem;">STOP LOSS / TRAILING</div>
-                                <div style="color: var(--warn); font-size: 1.5rem; font-family: 'Orbitron', sans-serif;">$${data.stop_loss}</div>
+                                <div style="color: var(--warn); font-size: 1.5rem; font-family: 'Orbitron', sans-serif;">$${pStop}</div>
                             </div>
                             <div>
                                 <div style="color: var(--text-muted); font-size: 0.9rem;">NIVEL DE PROTECCIÓN</div>
@@ -255,7 +261,7 @@
                     contenidoHTML += `
                         <div style="text-align: center; padding: 20px;">
                             <div style="font-family: 'Orbitron', sans-serif; font-size: 1.2rem; color: ${statusColor};">${statusText}</div>
-                            <div style="color: #fff; font-size: 2rem; margin-top: 10px; font-family: 'Share Tech Mono', monospace;">Precio: $${data.precio_actual}</div>
+                            <div style="color: #fff; font-size: 2rem; margin-top: 10px; font-family: 'Share Tech Mono', monospace;">Precio: $${pActual}</div>
                         </div>
                     `;
                 }

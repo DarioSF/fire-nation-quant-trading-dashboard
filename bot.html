@@ -174,18 +174,18 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // CORRECCIÓN CRÍTICA: Alineado con la arquitectura 4H Momentum Breakout
+// CORRECCIÓN: Alineado con la arquitectura RSI 15m + Bracket Orders (1.5 ATR)
     const identidades = {
-        "Azula":  { activo: "BTC/USD", temporalidad: "4H", tp: "Caza (Trailing)", sl: "Dinámico (2.0 - 3.0x)", modo: "Momentum Breakout" },
-        "Katara": { activo: "ETH/USD", temporalidad: "4H", tp: "Caza (Trailing)", sl: "Dinámico (2.0 - 3.0x)", modo: "Momentum Breakout" },
-        "Ty Lee": { activo: "SOL/USD", temporalidad: "4H", tp: "Caza (Trailing)", sl: "Dinámico (2.0 - 3.0x)", modo: "Momentum Breakout" },
-        "Suki":   { activo: "XRP/USD", temporalidad: "4H", tp: "Caza (Trailing)", sl: "Dinámico (2.0 - 3.0x)", modo: "Momentum Breakout" },
-        "Kyoshi": { activo: "ADA/USD", temporalidad: "4H", tp: "Caza (Trailing)", sl: "Dinámico (2.0 - 3.0x)", modo: "Momentum Breakout" },
-        "Korra":  { activo: "AVAX/USD", temporalidad: "4H", tp: "Caza (Trailing)", sl: "Dinámico (2.0 - 3.0x)", modo: "Momentum Breakout" },
-        "Lin":    { activo: "DOT/USD", temporalidad: "4H", tp: "Caza (Trailing)", sl: "Dinámico (2.0 - 3.0x)", modo: "Momentum Breakout" },
-        "Jinora": { activo: "LINK/USD", temporalidad: "4H", tp: "Caza (Trailing)", sl: "Dinámico (2.0 - 3.0x)", modo: "Momentum Breakout" },
-        "Mai":    { activo: "NEAR/USD", temporalidad: "4H", tp: "Caza (Trailing)", sl: "Dinámico (2.0 - 3.0x)", modo: "Momentum Breakout" },
-        "Zhuli":  { activo: "APT/USD", temporalidad: "4H", tp: "Caza (Trailing)", sl: "Dinámico (2.0 - 3.0x)", modo: "Momentum Breakout" }
+        "Azula":  { activo: "BTC/USD", temporalidad: "15M", tp: "Fijo (1.5x ATR)", sl: "Fijo (1.5x ATR)", modo: "RSI + Bracket" },
+        "Katara": { activo: "ETH/USD", temporalidad: "15M", tp: "Fijo (1.5x ATR)", sl: "Fijo (1.5x ATR)", modo: "RSI + Bracket" },
+        "Ty Lee": { activo: "SOL/USD", temporalidad: "15M", tp: "Fijo (1.5x ATR)", sl: "Fijo (1.5x ATR)", modo: "RSI + Bracket" },
+        "Suki":   { activo: "XRP/USD", temporalidad: "15M", tp: "Fijo (1.5x ATR)", sl: "Fijo (1.5x ATR)", modo: "RSI + Bracket" },
+        "Kyoshi": { activo: "ADA/USD", temporalidad: "15M", tp: "Fijo (1.5x ATR)", sl: "Fijo (1.5x ATR)", modo: "RSI + Bracket" },
+        "Korra":  { activo: "AVAX/USD", temporalidad: "15M", tp: "Fijo (1.5x ATR)", sl: "Fijo (1.5x ATR)", modo: "RSI + Bracket" },
+        "Lin":    { activo: "DOT/USD", temporalidad: "15M", tp: "Fijo (1.5x ATR)", sl: "Fijo (1.5x ATR)", modo: "RSI + Bracket" },
+        "Jinora": { activo: "LINK/USD", temporalidad: "15M", tp: "Fijo (1.5x ATR)", sl: "Fijo (1.5x ATR)", modo: "RSI + Bracket" },
+        "Mai":    { activo: "NEAR/USD", temporalidad: "15M", tp: "Fijo (1.5x ATR)", sl: "Fijo (1.5x ATR)", modo: "RSI + Bracket" },
+        "Zhuli":  { activo: "APT/USD", temporalidad: "15M", tp: "Fijo (1.5x ATR)", sl: "Fijo (1.5x ATR)", modo: "RSI + Bracket" }
     };
 
     const urlParams = new URLSearchParams(window.location.search);
